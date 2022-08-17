@@ -1,0 +1,462 @@
+<template>
+  <div id="main-content">
+    <div class="container-fluid">
+      <div class="block-header">
+        <bread-crumb></bread-crumb>
+      </div>
+      <div class="row clearfix">
+        <div class="col-md-12 cont">
+          <DxForm :col-count="2">
+            <DxGroupItem :col-count="2">
+              <div class="dx-field">
+                <div class="dx-field-label">Subsidiaria</div>
+                <div class="dx-field-value">
+                  <DxSelectBox
+                    :items="subsidiary"
+                    @value-changed="subsidiaryChange"
+                    display-expr="name"
+                    v-model:value="idSubsidiary"
+                    :search-enabled="true"
+                    :search-mode="searchModeOption"
+                    :search-expr="searchExprOption"
+                    :search-timeout="searchTimeoutOption"
+                    :min-search-length="minSearchLengthOption"
+                    :show-data-before-search="showDataBeforeSearchOption"
+                    value-expr="id"
+                  ></DxSelectBox>
+                </div>
+              </div>
+
+              <div class="dx-field">
+                <div class="dx-field-label">Empleado</div>
+                <div class="dx-field-value">
+                  <DxSelectBox
+                    :items="employee"
+                    @value-changed="changeHandle"
+                    display-expr="fullName"
+                    v-model:value="idEmployee"
+                    value-expr="id"
+                    data-field="Position"
+                    search-enable="true"
+                    id="idemployee"
+                    :search-enabled="true"
+                    :search-mode="searchModeOption"
+                    :search-expr="searchExprOption"
+                    :search-timeout="searchTimeoutOption"
+                    :min-search-length="minSearchLengthOption"
+                    :show-data-before-search="showDataBeforeSearchOption"
+                  ></DxSelectBox>
+                </div>
+              </div>
+            </DxGroupItem>
+
+            <DxGroupItem :col-count="3">
+              <div class="dx-field">
+                <div class="dx-field-label">Año</div>
+                <div class="dx-field-value">
+                  <DxSelectBox
+                    :items="years"
+                    @value-changed="changeHandle"
+                    display-expr="text"
+                    v-model:value="year"
+                    value-expr="value"
+                    search-enable="true"
+                    :search-enabled="true"
+                    :search-mode="searchModeOption"
+                    :search-expr="searchExprOption"
+                    :search-timeout="searchTimeoutOption"
+                    :min-search-length="minSearchLengthOption"
+                    :show-data-before-search="showDataBeforeSearchOption"
+                  ></DxSelectBox>
+                </div>
+              </div>
+              <div class="dx-field">
+                <div class="dx-field-label">Mes</div>
+                <div class="dx-field-value">
+                  <DxSelectBox
+                    :items="months"
+                    @value-changed="changeHandle"
+                    display-expr="text"
+                    v-model:value="month"
+                    value-expr="value"
+                    search-enable="true"
+                    :search-enabled="true"
+                    :search-mode="searchModeOption"
+                    :search-expr="searchExprOption"
+                    :search-timeout="searchTimeoutOption"
+                    :min-search-length="minSearchLengthOption"
+                    :show-data-before-search="showDataBeforeSearchOption"
+                  ></DxSelectBox>
+                </div>
+              </div>
+            </DxGroupItem>
+          </DxForm>
+        </div>
+      </div>
+
+      <div class="row clearfix">
+        <div class="col-md-12 cont">
+          <DxDataGrid
+            id="dataGridActivities"
+            :show-borders="true"
+            :data-source="dataSource"
+            :column-auto-width="true"
+            :repaint-changes-only="true"
+            :remote-operations="true"
+          >
+            <DxHeaderFilter :visible="true" />
+            <DxGroupPanel :visible="true" />
+            <DxGrouping :auto-expand-all="true" />
+            <DxExport :enabled="true" :allow-export-selected-data="true" />
+            <DxSearchPanel :visible="true" :width="240" placeholder="Buscar..." />
+            <DxFilterRow :visible="true" />
+            <DxScrolling row-rendering-mode="virtual" />
+            <DxPaging :page-size="10" />
+            <DxPager
+              :visible="true"
+              :allowed-page-sizes="[10, 20, 50]"
+              :show-page-size-selector="true"
+              :show-info="false"
+              :show-navigation-buttons="true"
+            />
+
+            <DxEditing
+              :refresh-mode="refreshMode"
+              :allow-updating="allowEditing"
+              :allow-adding="this.idEmployee != null"
+              :allow-deleting="allowEditing"
+              mode="popup"
+            >
+              <DxScrolling row-rendering-mode="virtual" />
+              <DxPaging :page-size="10" />
+              <DxPopup
+                :show-title="true"
+                :width="700"
+                :height="525"
+                title="Registro de Participaciones por Movimientos"
+              />
+              <DxFormGrid>
+                <DxItem :col-count="2" :col-span="2" item-type="group">
+                  <DxItem data-field="catalogDiscretionaryTypeId" />
+                  <DxItem data-field="description" />
+                  <DxItem data-field="value" />
+                  <DxItem data-field="status_str" :editor-options="{ visible: false }" />
+                </DxItem>
+              </DxFormGrid>
+            </DxEditing>
+            <DxColumn :allow-editing="false" :width="300" data-field="date" caption="Fecha"> </DxColumn>
+            <DxColumn
+              :allow-editing="true"
+              data-field="description"
+              caption="Detalle"
+              cell-template="cell-link-template"
+            >
+              <DxRequiredRule />
+            </DxColumn>
+            <DxColumn
+              :width="150"
+              :set-cell-value="setTypeValue"
+              data-type="string"
+              data-field="catalogDiscretionaryTypeId"
+              caption="Tipo"
+              ><DxLookup :data-source="type" value-expr="id" display-expr="value" />
+            </DxColumn>
+            <DxColumn :allow-editing="false" :width="300" data-field="status_str" caption="Estado"> </DxColumn>
+            <DxColumn :allow-editing="true" :format="saleAmountFormat" :width="150" data-field="value" caption="Valor">
+              <DxRequiredRule />
+            </DxColumn>
+
+            <template #cell-link-template="{ data }">
+              <cellLink
+                :cell-data="data"
+                :routePath="{
+                  name: 'DirectParticipation',
+                  params: { id: data.data.id },
+                }"
+              />
+            </template>
+          </DxDataGrid>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import CustomStore from "devextreme/data/custom_store";
+import BreadCrumb from "@/components/BreadCrumb.vue";
+import { DxValidator, DxRequiredRule } from "devextreme-vue/validator";
+import { DxForm, DxSimpleItem, DxGroupItem, DxLabel, DxItem } from "devextreme-vue/form";
+import { DxSelectBox } from "devextreme-vue/select-box";
+import DxDateBox from "devextreme-vue/date-box";
+import { RepositoryFactory } from "@/repositories/RepositoryFactory";
+import DxNumberBox from "devextreme-vue/number-box";
+import DxButton from "devextreme-vue/button";
+import {
+  DxDataGrid,
+  DxColumn,
+  DxPopup,
+  DxExport,
+  DxForm as DxFormGrid,
+  DxGrouping,
+  DxGroupPanel,
+  DxPager,
+  DxPaging,
+  DxSearchPanel,
+  DxEditing,
+  DxFilterRow,
+  DxScrolling,
+  DxLookup,
+  DxHeaderFilter,
+} from "devextreme-vue/data-grid";
+
+import cellLink from "@/components/DataGrid/CellLinkTemplate.vue";
+const BASE_DOMAIN = import.meta.env.VITE_BASE_URL_API;
+const subsidiariesRepository = RepositoryFactory.get("subsidiaries");
+const employeesRepository = RepositoryFactory.get("employees");
+
+const catalogRepository = RepositoryFactory.get("catalogs");
+const URLFinantialParticipation = `${BASE_DOMAIN}/api/FinancialParticipation`;
+const FinantialParticipationRepository = RepositoryFactory.get("financialParticipation");
+const discretionalType = await catalogRepository.Get("NAME", "DISCRETIONARYTYPE");
+
+function isNotEmpty(value) {
+  return value !== undefined && value !== null && value !== "";
+}
+
+export default {
+  name: "ActivitiesView",
+  components: {
+    BreadCrumb,
+    DxForm,
+    DxItem,
+    DxSimpleItem,
+    DxGroupItem,
+    DxLabel,
+    DxNumberBox,
+    DxRequiredRule,
+    DxPopup,
+    DxExport,
+    DxSelectBox,
+    DxDateBox,
+    DxButton,
+    DxDataGrid,
+    DxColumn,
+    DxGrouping,
+    DxGroupPanel,
+    DxPager,
+    DxPaging,
+    DxSearchPanel,
+    DxEditing,
+    DxFilterRow,
+    DxScrolling,
+    DxLookup,
+    DxHeaderFilter,
+    cellLink,
+  },
+  data() {
+    return {
+      idSubsidiary: 0,
+      idEmployee: null,
+
+      years: [],
+      dataSource: {},
+      subsidiary: [],
+      employee: [],
+      months: [],
+      type: discretionalType.data.data,
+      year: 0,
+      month: 0,
+      searchModeOption: "contains",
+      searchExprOption: "name",
+      searchTimeoutOption: 200,
+      minSearchLengthOption: 0,
+      showDataBeforeSearchOption: false,
+      saleAmountFormat: { style: "currency", currency: "USD", useGrouping: true, minimumSignificantDigits: 3 },
+      refreshMode: "reshape",
+      setTypeValue(rowData, value) {
+        rowData.catalogRegionStateId = null;
+        rowData.catalogRegionCityId = null;
+        this.defaultSetCellValue(rowData, value);
+      },
+    };
+  },
+  methods: {
+    subsidiaryChange: async function (e) {
+      this.employee = [];
+
+      let param = [];
+      param["skip"] = 0;
+      param["take"] = 0;
+      param["requireTotalCount"] = true;
+      param["filter"] = '["subsidiaryId","=","' + e.value + '"]';
+      const { data } = await employeesRepository.GetWithFilter(param);
+
+      this.employee = data.data.data;
+      //this.idcustomer = 0;
+
+      //$("#idcustomer").dxSelectBox("instance").option("value", 0);
+      //$("#idproject").dxSelectBox("instance").option("value", 0);
+      //$("#idtask").dxSelectBox("instance").option("value", 0);
+    },
+    loadPeriods: async function () {
+      //console.log(`${URLProjectTasks}/paginated`);
+      const month = [
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre",
+      ];
+
+      let d = new Date();
+      for (let i = 0; i < 12; i++) {
+        this.months = [...this.months, { value: i + 1, text: month[i] }];
+      }
+
+      for (let i = d.getFullYear() - 4; i <= d.getFullYear(); i++) {
+        this.years = [...this.years, { value: i, text: `${i}` }];
+      }
+    },
+    allowEditing(e) {
+      return !e.row.data.status == "G";
+    },
+    changeHandle: async function () {
+      await this.loadDataSource();
+      console.log("changeHandle");
+    },
+    getSubsidiaries: async function () {
+      const { data } = await subsidiariesRepository.GetWithPagination({});
+      this.subsidiary = data.data;
+    },
+    loadDataSource: async function () {
+      this.dataSource = new CustomStore({
+        key: "id",
+        load: (loadOptions) => {
+          console.log(
+            "dataSource",
+            this.idEmployee,
+            this.year,
+            this.month,
+            `${URLFinantialParticipation}/filter/${this.idEmployee}/${this.year}/${this.month}`
+          );
+
+          let params = {};
+          [
+            "skip",
+            "take",
+            "requireTotalCount",
+            "requireGroupCount",
+            "sort",
+            "filter",
+            "totalSummary",
+            "group",
+            "groupSummary",
+          ].forEach((i) => {
+            if (i in loadOptions && isNotEmpty(loadOptions[i])) {
+              params[i] = JSON.stringify(loadOptions[i]);
+            }
+          });
+          console.log(params);
+          console.log("idemployee", this.idEmployee);
+          if (this.idEmployee == null) return { data: {}, totalCount: 0 };
+          return this.sendRequest(
+            `${URLFinantialParticipation}/filter/discretionary/${this.idEmployee}/${this.year}/${this.month}`,
+            "GET",
+            params
+          ).then((data) => {
+            console.log("sendrequet", data);
+            data.data.map((e) => {
+              e.status_str = FinantialParticipationRepository.GetStatus(e.status).value;
+              e.tipo_str = FinantialParticipationRepository.GetType(e.type).value;
+            });
+
+            return data;
+          });
+        },
+        insert: (values) => {
+          values.status = "G";
+          values.year = this.year;
+          values.month = this.month;
+          values.type = "A";
+          values.employeeId = this.idEmployee;
+          console.log("insert", values);
+          return this.sendRequest(`${URLFinantialParticipation}`, "POST", {
+            values: JSON.stringify(values),
+          });
+        },
+        update: (key, values) => {
+          values.id = key;
+          console.log("update", values);
+          return this.sendRequest(`${URLFinantialParticipation}`, "PUT", {
+            key,
+            values: JSON.stringify(values),
+          });
+        },
+        remove: (key) => {
+          return this.sendRequest(`${URLFinantialParticipation}/${key}`, "DELETE", {});
+        },
+        byKey: (key) => {
+          return this.sendRequest(`${URLFinantialParticipation}`, "GET", {
+            Field: "ID",
+            Value: key,
+          }).then((data) => {
+            return data;
+            //console.log("data", data);
+          });
+        },
+      });
+    },
+    sendRequest(url, method = "GET", data = {}) {
+      const params = Object.keys(data)
+        .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
+        .join("&");
+      if (method === "GET") {
+        return fetch(`${url}?${params}`, {
+          method,
+        }).then((result) =>
+          result.json().then((json) => {
+            if (result.ok) return json.data;
+            throw json.Message;
+          })
+        );
+      }
+      return fetch(url, {
+        method,
+        body: data.values,
+        headers: {
+          "Content-Type": "application/json;charset=UTF-8",
+        },
+      }).then((result) => {
+        if (result.ok) {
+          return result.text().then((text) => text && JSON.parse(text));
+        }
+        return result.json().then((json) => {
+          throw json.Message;
+        });
+      });
+    },
+  },
+  async beforeMount() {
+    await this.getSubsidiaries();
+    //await this.getCustomers();
+
+    await this.loadPeriods();
+
+    console.log("At this point, events and lifecycle have been initialized.");
+  },
+  async mounted() {
+    let d = new Date();
+    this.year = d.getFullYear();
+    this.month = d.getMonth() + 1;
+    this.loadDataSource();
+  },
+};
+</script>
